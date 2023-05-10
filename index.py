@@ -1,11 +1,11 @@
 import asyncio
-from flask import Flask, request, send_file
-import aiohttp
-import aiofiles
 import os
 import shutil
 import uuid
 import logging
+import aiohttp
+import aiofiles
+from flask import Flask, request, send_file
 
 def guess_extension(content_type):
     if content_type == 'image/jpeg':
@@ -18,49 +18,47 @@ def guess_extension(content_type):
     else:
         return ''
 
-
-
 logging.basicConfig(filename='app.log', level=logging.INFO)
 app = Flask(__name__)
 
 html = '''
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-        }
-        form {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            margin-top: 20px;
-        }
-        input[type="text"] {
-            width: 70%;
-            padding: 12px 20px;
-            margin: 8px 0;
-            box-sizing: border-box;
-            border: 2px solid #ccc;
-            border-radius: 4px;
-        }
-        input[type="submit"] {
-            width: 30%;
-            background-color: #4CAF50;
-            color: white;
-            padding: 14px 20px;
-            margin: 8px 0;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-        input[type="submit"]:hover {
-            background-color: #45a049;
-        }
-    </style>
-    <form method="post">
-        <label for="url">URL:</label>
-        <input type="text" id="url" name="url">
-        <input type="submit" value="Download">
-    </form>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+    }
+    form {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin-top: 20px;
+    }
+    input[type="text"] {
+        width: 70%;
+        padding: 12px 20px;
+        margin: 8px 0;
+        box-sizing: border-box;
+        border: 2px solid #ccc;
+        border-radius: 4px;
+    }
+    input[type="submit"] {
+        width: 30%;
+        background-color: #4CAF50;
+        color: white;
+        padding: 14px 20px;
+        margin: 8px 0;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+    input[type="submit"]:hover {
+        background-color: #45a049;
+    }
+</style>
+<form method="post">
+    <label for="url">URL:</label>
+    <input type="text" id="url" name="url">
+    <input type="submit" value="Download">
+</form>
 '''
 
 async def download_website(session, url, project_folder):
@@ -75,7 +73,6 @@ async def download_website(session, url, project_folder):
 
         if extension:
             os.rename(filepath, os.path.splitext(filepath)[0] + extension)
-
 
 async def download_and_zip_website(url, project_folder):
     async with aiohttp.ClientSession() as session:
@@ -92,11 +89,12 @@ async def download_and_zip_website(url, project_folder):
 
         return zip_name
 
-
 def adjust_extension(filename, new_extension):
     basename = os.path.basename(filename)
     name, _ = os.path.splitext(basename)
     return f"{name}.{new_extension}"
+
+
 
 
 @app.route('/', methods=['GET', 'POST'])
@@ -108,8 +106,11 @@ def index():
         if not url:
             logging.info(f'not valid url {url}')
             return html + '(Error: URL not provided)'
-        os.makedirs("./data")
+
         project_folder = './data'
+
+        if not os.path.isdir(project_folder):
+            os.makedirs(project_folder)
 
         if not os.path.isdir(project_folder):
             return f"Error: {project_folder} is not a valid directory"
@@ -117,14 +118,15 @@ def index():
             return html + f"Error: {project_folder} is not writable"
 
         zip_name = asyncio.run(download_and_zip_website(url, project_folder))
-        return send_file(f'{zip_name}.zip', as_attachment=True, download_name=f'{zip_name}.zip')
+        return send_file(f'{zip_name}.zip', as_attachment=True, attachment_filename=f'{zip_name}.zip')
+
+
     return html
 
 
 if __name__ == '__main__':
     async def main():
-
-        app.run(host='0.0.0.0')
+        app.run(debug=True, port=8080)
 
     loop = asyncio.get_event_loop()
     task = loop.create_task(main())
@@ -132,3 +134,4 @@ if __name__ == '__main__':
         loop.run_until_complete(task)
     except KeyboardInterrupt:
         pass
+
