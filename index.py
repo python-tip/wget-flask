@@ -126,7 +126,7 @@ def index():
 
 if __name__ == '__main__':
     async def main():
-        app.run(debug=True, port=8080)
+        app.run(debug=False)
 
     loop = asyncio.get_event_loop()
     task = loop.create_task(main())
